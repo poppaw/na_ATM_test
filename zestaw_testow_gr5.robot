@@ -9,12 +9,20 @@ Test Teardown       Zamknięcie Aplikacji
 
 *** Variables ***
 
-${PROPER PIN}
-${WRONG PIN}
-${TIMEOUT}
-${PROPER CARD NUMBER}
-${WRONG CARD NUBER}
-${PROPER CARD VENDOR}   boolean
+${PROPER PIN}       True
+${WRONG PIN}        False
+${TIMEOUT(s)}       10
+${PROPER CARD NUMBER}   True
+${WRONG CARD NUBER}     False
+${PROPER CARD VENDOR}   True
+${WRONG CARD VENDOR}    False
+${POSSIBLE DEBIT}       True
+${IMPOSSIBLE DEBIT}     False
+${GET MONEY}       Wybierz pieniądze
+${BALANCE REQUEST}     Wyświetl saldo
+@{OPTION}=       ${GET MONEY}    ${BALANCE REQUEST}
+${REFUSE}=      "Odmowa dostępu"
+${KEEP THE CARD}    "Karta zaostała zatrzymana"
 
 
 *** Test Cases ***
@@ -32,61 +40,67 @@ Nazwa pierwszego testu
     [Teardown]    Sprzatanie po tescie pierwszym
 
 
-Poprawny dostawca karty
+Akceptacja karty właściwego dostawcy
     [Documentation]    Sprawdzenie czy karta klienta jest obsługiwana
 ...                Karta klienta jest obsługiwana
 ...                Aplikacja pozwala wpisać nr PIN
 
     [Setup]     Uruchomienie Aplikacji
     
-    Weryfikuj kartę     ${PROPER CARD VENDOR=TRUE}
-    Karta jest akceptowalna
-    Aplikacja prosi o PIN
+    Akceptuj kartę  ${PROPER CARD VENDOR}
+    Aplikacja powinna porosić o wpisanie PIN
     [Teardown]    Zamknięcie Aplikacji
     
 
-Niepoprawny dostawca karty
+Odrzucenie karty innego dostawcy
     [Documentation]    Sprawdzenie czy karta klienta jest obsługiwana
     ...                Karta klienta nie jest obsługiwana
-    ...                Aplikacja nie pozwala wpisać nr PIN i odrzuca kartę
+    ...                Aplikacja nie pozwala wpisać nr PIN i wyświetla komunikat o odmowie dostępu
+    ...                 Aplikacja zwraca kartę
     [Setup]     Uruchomienie Aplikacji
-    Weryfikuj kartę     ${PROPER CARD VENDOR=FALSE}
-    Wyświetlenie informacji o tym, że karta nie jest obsługiwana.
+    Odrzuć kartę  ${WRONG CARD VENDOR}
+    Apk powinna zwróć kartę
+    Apk powinna wyświetlić komunikat ${REFUSE}
+
+Akceptacja poprawnego PIN
+    [Documentation]    Sprawdzenie czy pin jest poprawny
+...                    Karta klienta jest obsługiwana
+...                    Aplikacja pozwala wpisać nr PIN
+...                    Pin został poprawnie zweryfikowany
+...                    Aplikacja wyświetla jedną z dwóch opcji: "wybierz"/"pokaż saldo"
+
+
+    [Setup]     Uruchomienie Aplikacji
+    [Setup]     Akceptuj kartę  PROPER CARD VENDOR
+                Akceptuj pin  PROPER PIN
+                Apk powinna wyświetl co chcesz zrobić  @{OPTION}
+
+
+Odrzucenie błędnego pinu
+    [Documentation]    Sprawdzenie czy pin jest poprawny
+...                Karta klienta jest obsługiwana
+...                Aplikacja pozwala wpisać nr PIN
+...                 Pin został negatywnie zweryfikowany
+...                 Aplikacja wyświetla komunikat o odmowie dostępu
+...                 (Aplikacja inkrementuje wartość licznika prób połączeń o 1 (???)
+...                 Jeśli wartość licznika < 3 aplikacja zwraca kartę (???)) - tego nie testujemy
+
+
+    [Setup]     Uruchomienie Aplikacji
+                Akceptuj kartę  
+                Odrzuć pin     
+                Apk powinna wyświetlić komunikat    ${REFUSE}
+                
 
 Zablokowanie Karty
-    [Documentation]    Zablokowanie karty klienta po 4 niudanych próbach wpisania kodu PIN.
+    [Documentation]    Zablokowanie karty klienta po 3 niudanych próbach wpisania kodu PIN.
 ...                Karta klienta zostaje zablokowana.
 ...                Wyświetlenie informacji o zablokowaniu karty.
     [Setup]     Uruchomienie Aplikacji
-    Karta jest akceptowalna.
-    Weryfikacja kodu PIN.
-    Podanie złego kodu PIN.
-    Zablokowanie karty klienta po 4 nieudanych próbach.
-    Wyświetlenie informacji o zablokowaniu karty.
-    [Teardown]    Zamknięcie Aplikacji
+                Potrzykroć odrzuć pin
+                Powinna wyświetl komunikat ${REFUSE} ${KEEP THE CARD}
 
-
-
-Poprawny pin
-    [Documentation]    Sprawdzenie czy pin jest poprawny
-...                Karta klienta jest obsługiwana
-...                Aplikacja pozwala wpisać nr PIN
-...                 Pin został poprawnie zweryfikowany
-
-
-    [Setup]     Uruchomienie Aplikacji
-                Weryfikacja     ${PROPER PIN}
-
-
-Niepoprawny pin
-    [Documentation]    Sprawdzenie czy pin jest poprawny
-...                Karta klienta jest obsługiwana
-...                Aplikacja pozwala wpisać nr PIN
-...                 Pin został poprawnie zweryfikowany
-
-
-    [Setup]     Uruchomienie Aplikacji
-                Weryfikacja     ${WRONG PIN}
+# Dotąd zrobiłem - Paweł
 
 
 Klient żąda gotówki wystarczaje zasoby na koncie wystarczających zasobach w bankomacie
@@ -141,20 +155,29 @@ Klient nie odebrał gotówki
 
 
 *** Keywords ***
-Sprawdz typ karty
+Akceptuj kartę
+    Włóż kartę      ${PROPER CARD VENDOR}
+
+Odrzuć kartę
+    Włóż kartę      ${WRONG CARD VENDOR}
+
     
-Sprawdz poprawosc pinu
+Akceptuj pin
+    Weryfikuj pin   ${PROPER PIN}
 
-Sprawdz stan konta uzytkownika
+Odrzuć pin       
+    Weryfikuj pin       ${WRONG PIN}
 
-Sprawdz stan pieniężny bankomatu
 
-Przygotowanie testu pierwszego
-    Uruchomienie Aplikacji
-    Akcja pierwszej w ramach przygotowania
+Potrzykroć odrzuć pin
+    Akceptuj kartę  
+    Odrzuć pin
+    Akceptuj kartę 
+    Odrzuć pin
+    Akceptuj kartę
+    Odrzuć pin
 
-Pierwsza akcja
-    Wykonanie konkretnych czynnosci
 
-Pierwsza weryfikacja
-    Dokladne sprawdzenie czynnosci
+
+
+
