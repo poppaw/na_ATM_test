@@ -2,13 +2,15 @@
 Documentation         Dokumentacja dla zestawu testowego (Test Suite)
 ...                   Opis jakie testy zostana przeprowadzone, jakie wymagania sprawdzone
 ...                   Kto jest odpowiedzialny za przygotowanie testow, za przeglad (review), kto bedzie utrzymywal test
-...                   Historia zmian testu
+...                   Historia zmian testu: system kontroli wersji
 
 Test Setup          Uruchomienie Aplikacji
 Test Teardown       Zamknięcie Aplikacji
 
 *** Variables ***
 
+${PROMPT READY}     Włóż kartę
+${PIN PROMPT}       Podaj PIN
 ${PROPER PIN}       True
 ${WRONG PIN}        False
 ${TIMEOUT(s)}       10
@@ -20,25 +22,16 @@ ${POSSIBLE DEBIT}       True
 ${IMPOSSIBLE DEBIT}     False
 ${GET MONEY}       Wybierz pieniądze
 ${BALANCE REQUEST}     Wyświetl saldo
-@{OPTION}=       ${GET MONEY}    ${BALANCE REQUEST}
+@{OPTIONS}=       ${GET MONEY}    ${BALANCE REQUEST}
 ${REFUSE}=      "Odmowa dostępu"
 ${KEEP THE CARD}    "Karta zaostała zatrzymana"
+${Start Blance}    850
 
 
 *** Test Cases ***
-Nazwa pierwszego testu
-    [Documentation]    Dokumentacja do testu
-    ...                Zapisujemy w jednym zdaniu jaki jest cel testu
-    ...                Wypisujemy jakie sa warunki poczatkowe (preconditions) dla testu
-    ...                Wypisujemy jaki jest rezultat testu
-    [Setup]     Przygotowanie testu pierwszego
-    Pierwsza akcja
-    Pierwsza weryfikacja
-    [Opcjonalne] Przygotowanie do drugiej akcji
-    Druga akcja
-    Druga weryfikacja
-    [Teardown]    Sprzatanie po tescie pierwszym
 
+Poprawny stan początkowy Aplikacji
+    [Documentation]     Aplikacja wyświetla komunikat
 
 Akceptacja karty właściwego dostawcy
     [Documentation]    Sprawdzenie czy karta klienta jest obsługiwana
@@ -47,7 +40,7 @@ Akceptacja karty właściwego dostawcy
 
     [Setup]     Uruchomienie Aplikacji
     
-    Akceptuj kartę  ${PROPER CARD VENDOR}
+    Akceptuj kartę
     Aplikacja powinna porosić o wpisanie PIN
     [Teardown]    Zamknięcie Aplikacji
     
@@ -58,9 +51,10 @@ Odrzucenie karty innego dostawcy
     ...                Aplikacja nie pozwala wpisać nr PIN i wyświetla komunikat o odmowie dostępu
     ...                 Aplikacja zwraca kartę
     [Setup]     Uruchomienie Aplikacji
-    Odrzuć kartę  ${WRONG CARD VENDOR}
+    Odrzuć kartę
     Apk powinna zwróć kartę
     Apk powinna wyświetlić komunikat ${REFUSE}
+    [Teardown]      Zamknij aplikację
 
 Akceptacja poprawnego PIN
     [Documentation]    Sprawdzenie czy pin jest poprawny
@@ -71,12 +65,12 @@ Akceptacja poprawnego PIN
 
 
     [Setup]     Uruchomienie Aplikacji
-    [Setup]     Akceptuj kartę  PROPER CARD VENDOR
-                Akceptuj pin  PROPER PIN
-                Apk powinna wyświetl co chcesz zrobić  @{OPTION}
+                Akceptuj kartę
+    Akceptuj pin
+    Apk powinna wyświetl co chcesz zrobić  @{OPTION}
 
 
-Odrzucenie błędnego pinu
+Odrzucenie błędnego PIN
     [Documentation]    Sprawdzenie czy pin jest poprawny
 ...                Karta klienta jest obsługiwana
 ...                Aplikacja pozwala wpisać nr PIN
@@ -88,8 +82,8 @@ Odrzucenie błędnego pinu
 
     [Setup]     Uruchomienie Aplikacji
                 Akceptuj kartę  
-                Odrzuć pin     
-                Apk powinna wyświetlić komunikat    ${REFUSE}
+    Odrzuć pin     
+    Apk powinna wyświetlić komunikat    ${REFUSE}
                 
 
 Zablokowanie Karty
@@ -97,10 +91,27 @@ Zablokowanie Karty
 ...                Karta klienta zostaje zablokowana.
 ...                Wyświetlenie informacji o zablokowaniu karty.
     [Setup]     Uruchomienie Aplikacji
-                Potrzykroć odrzuć pin
-                Powinna wyświetl komunikat ${REFUSE} ${KEEP THE CARD}
+    Potrzykroć odrzuć pin
+    Apk powinna wyświetl komunikat ${REFUSE} ${KEEP THE CARD}
+
+
+Sprawdzenie salda klienta
+    [Documentation]     Ustalamy stan konta klienta
+...                     Klient wybiera opcję pokaż saldo
+...                     Wyświetlona kwota salda zgadza się z ustaloną
+...                
+... 
+    [Setup]     Ustal saldo klienta     ${Start Balance}
+                Uruchomienie Aplikacji
+                Zaloguj poprawnie
+    Wybierz sprawdzenie salda            
+    Kwota powinien być zgodny z ${Start Blance}
 
 # Dotąd zrobiłem - Paweł
+
+
+
+
 
 
 Klient żąda gotówki wystarczaje zasoby na koncie wystarczających zasobach w bankomacie
@@ -130,7 +141,6 @@ Potwierdzenie transakcji
     Wyświetlenie informacji o stanie konta.
     [Teardown]  Zamknięcie Aplikacji
     
-
 
 
 
@@ -168,6 +178,10 @@ Akceptuj pin
 Odrzuć pin       
     Weryfikuj pin       ${WRONG PIN}
 
+Zaloguj poprawnie
+    Akceptuj kartę
+    Akceptuj pin
+
 
 Potrzykroć odrzuć pin
     Akceptuj kartę  
@@ -177,6 +191,15 @@ Potrzykroć odrzuć pin
     Akceptuj kartę
     Odrzuć pin
 
+Ustal saldo klienta
+    [Arguments]     ${amount}
+    ${Start Blance}=  ${amount} 
+    [Return]        ${Start Balance} 
+
+Wybierz sprawdzenie salda
+    Kliknij w przycisk  ${BALANCE REQUEST}
+
+ 
 
 
 
